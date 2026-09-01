@@ -27,15 +27,17 @@
 
             <div class="mb-4">
                 <label for="username"
-                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Username</label>
-                <input id="username" name="username" type="text" required autofocus value="{{ old('username') }}"
+                    class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Username or
+                    Email</label>
+                <input id="username" name="username" type="text" required autofocus autocomplete="username"
+                    placeholder="Enter your username or email" value="{{ old('username') }}"
                     class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-800/20">
             </div>
 
             <div class="mb-6">
                 <label for="password"
                     class="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">Password</label>
-                <input id="password" name="password" type="password" required
+                <input id="password" name="password" type="password" required autocomplete="current-password"
                     class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-800/20">
             </div>
 

@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\MediatorController;
+use App\Http\Controllers\Admin\CaseController;
+use App\Http\Controllers\Admin\CaseCategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -39,11 +41,13 @@ Route::prefix(config('admin.panel_slug'))
         Route::middleware(['auth', 'admin'])->group(function () {
             Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-            Route::get('dashboard', function () {
-                return view('admin.dashboard');
-            })->name('dashboard');
+            Route::get('dashboard', function () {return view('admin.dashboard');})->name('dashboard');
 
             Route::resource('mediators', MediatorController::class)->names('mediators');
+
+            Route::resource('cases', CaseController::class)->names('cases');
+
+            Route::resource('categories', CaseCategoryController::class)->names('categories');
         });
     });
 

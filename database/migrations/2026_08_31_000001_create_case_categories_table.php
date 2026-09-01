@@ -12,24 +12,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->boolean('is_active')->default(true);
+            $table->boolean('is_active')->default(true); // used to hide from dropdowns later
             $table->timestamps();
-        });
-
-        Schema::table('cases', function (Blueprint $table) {
-            $table->foreign('case_category_id')
-                ->references('id')
-                ->on('case_categories')
-                ->nullOnDelete();
         });
     }
 
     public function down(): void
     {
-        Schema::table('cases', function (Blueprint $table) {
-            $table->dropForeign(['case_category_id']);
-        });
-
         Schema::dropIfExists('case_categories');
     }
 };
