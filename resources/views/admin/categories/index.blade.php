@@ -27,6 +27,24 @@
         </div>
     @endif
 
+    <form method="GET" action="{{ route('admin.categories.index') }}" class="mb-4 flex items-center gap-3">
+        <label for="mediator_id" class="text-xs font-semibold text-muted uppercase tracking-wide">Filter by mediator</label>
+        <select id="mediator_id" name="mediator_id" onchange="this.form.submit()"
+            class="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maroon/20">
+            <option value="">All mediators (overall)</option>
+            @foreach ($mediators as $mediator)
+                <option value="{{ $mediator->id }}" @selected($mediatorId == $mediator->id)>
+                    {{ $mediator->advocate_name }}
+                </option>
+            @endforeach
+        </select>
+
+        @if ($mediatorId)
+            <a href="{{ route('admin.categories.index') }}" class="text-sm font-medium text-maroon hover:underline">Clear
+                filter</a>
+        @endif
+    </form>
+
     <div class="bg-white border border-border rounded-lg shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -37,6 +55,9 @@
                         <th class="px-4 py-3">Name</th>
                         <th class="px-4 py-3">Description</th>
                         <th class="px-4 py-3">Cases</th>
+                        <th class="px-4 py-3">Pending</th>
+                        <th class="px-4 py-3">Settled</th>
+                        <th class="px-4 py-3">Unsettled</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3 text-right">Actions</th>
                     </tr>
@@ -48,7 +69,10 @@
                             <td class="px-4 py-3 font-medium text-ink whitespace-nowrap">{{ $category->name }}</td>
                             <td class="px-4 py-3 max-w-md">
                                 {{ \Illuminate\Support\Str::limit($category->description, 80) ?? '—' }}</td>
-                            <td class="px-4 py-3">{{ $category->cases_count }}</td>
+                            <td class="px-4 py-3 font-medium">{{ $category->cases_count }}</td>
+                            <td class="px-4 py-3 text-amber-700">{{ $category->pending_count }}</td>
+                            <td class="px-4 py-3 text-emerald-700">{{ $category->settled_count }}</td>
+                            <td class="px-4 py-3 text-rose-700">{{ $category->unsettled_count }}</td>
                             <td class="px-4 py-3">
                                 @if ($category->is_active)
                                     <span
@@ -73,7 +97,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-10 text-center text-muted">No categories yet.</td>
+                            <td colspan="9" class="px-4 py-10 text-center text-muted">No categories yet.</td>
                         </tr>
                     @endforelse
                 </tbody>

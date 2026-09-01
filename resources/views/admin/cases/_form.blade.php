@@ -11,8 +11,9 @@
 
 <div class="mb-4">
     <label for="case_no" class="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">Case No.</label>
-    <input id="case_no" name="case_no" type="text" value="{{ old('case_no', $isEdit ? $case->case_no : '') }}"
-        class="w-full px-3 py-2.5 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maroon/20">
+    <textarea id="case_no" name="case_no" rows="1"
+        class="w-full px-3 py-2.5 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maroon/20 resize-none overflow-hidden"
+        oninput="autoResize(this)">{{ old('case_no', $isEdit ? $case->case_no : '') }}</textarea>
     @error('case_no')
         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
     @enderror
@@ -22,7 +23,8 @@
     <label for="parties_name"
         class="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">Parties</label>
     <textarea id="parties_name" name="parties_name" rows="2"
-        class="w-full px-3 py-2.5 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maroon/20">{{ old('parties_name', $isEdit ? $case->parties_name : '') }}</textarea>
+        class="w-full px-3 py-2.5 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maroon/20 resize-none overflow-hidden"
+        oninput="autoResize(this)">{{ old('parties_name', $isEdit ? $case->parties_name : '') }}</textarea>
     @error('parties_name')
         <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
     @enderror
@@ -153,7 +155,8 @@
 
 {{-- Only relevant once settled/unsettled — shown/hidden by toggleAmountField() --}}
 <div id="amount-field" class="mb-6">
-    <label for="amount" class="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">Amount (given to
+    <label for="amount" class="block text-xs font-semibold text-muted uppercase tracking-wide mb-1.5">Amount (given
+        to
         mediator)</label>
     <input id="amount" name="amount" type="number" step="0.01" min="0"
         value="{{ old('amount', $isEdit ? $case->amount : '') }}"
@@ -193,5 +196,38 @@
         field.style.display = (status === 'settled' || status === 'unsettled') ? 'block' : 'none';
     }
 
-    document.addEventListener('DOMContentLoaded', toggleAmountField);
+    // Auto-grow a textarea to fit its content.
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = el.scrollHeight + 'px';
+    }
+
+    // Plain Enter does nothing (no newline, no accidental form submit).
+    // Shift+Enter or Alt+Enter inserts a line break at the cursor.
+    function handleControlledEnter(e) {
+        if (e.key !== 'Enter') return;
+
+        if (e.shiftKey || e.altKey) {
+            e.preventDefault();
+            const el = e.target;
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            el.value = el.value.slice(0, start) + '\n' + el.value.slice(end);
+            el.selectionStart = el.selectionEnd = start + 1;
+            autoResize(el);
+        } else {
+            e.preventDefault();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleAmountField();
+
+        ['case_no', 'parties_name'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('keydown', handleControlledEnter);
+            autoResize(el); // correct initial height for pre-filled edit values
+        });
+    });
 </script>

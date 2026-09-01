@@ -4,19 +4,50 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CaseCategory;
+use App\Models\Mediator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CaseCategoryController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $categories = CaseCategory::withCount('cases')
-            ->orderBy('name')
-            ->paginate(20);
+        $mediatorId = $request->input('mediator_id');
 
-        return view('admin.categories.index', compact('categories'));
+        // Each count below respects the mediator filter when one is
+        // selected, so all five totals (cases/pending/settled/unsettled)
+        // stay consistent with each other.
+        $filterByMediator = function ($query) use ($mediatorId) {
+            if ($mediatorId) {
+                $query->where('mediator_id', $mediatorId);
+            }
+        };
+
+        $categories = CaseCategory::withCount([
+            'cases as cases_count' => $filterByMediator,
+            'cases as pending_count' => function ($query) use ($filterByMediator) {
+                $filterByMediator($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($filterByMediator) {
+                $filterByMediator($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($filterByMediator) {
+                $filterByMediator($query);
+                $query->where('status', 'unsettled');
+            },
+        ])
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        $mediators = Mediator::where('is_active', true)
+            ->orderBy('advocate_name')
+            ->get();
+
+        return view('admin.categories.index', compact('categories', 'mediators', 'mediatorId'));
     }
 
     public function create(): View
