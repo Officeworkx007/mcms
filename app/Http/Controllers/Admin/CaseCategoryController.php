@@ -7,6 +7,7 @@ use App\Models\CaseCategory;
 use App\Models\Mediator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CaseCategoryController extends Controller
@@ -39,7 +40,7 @@ class CaseCategoryController extends Controller
                 $query->where('status', 'unsettled');
             },
         ])
-            ->orderBy('name')
+            ->orderBy('name', 'asc')
             ->paginate(20)
             ->withQueryString();
 
@@ -71,7 +72,7 @@ class CaseCategoryController extends Controller
 
     public function update(Request $request, CaseCategory $category): RedirectResponse
     {
-        $category->update($this->validated($request));
+        $category->update($this->validated($request, $category));
 
         return redirect()
             ->route('admin.categories.index')
@@ -80,22 +81,31 @@ class CaseCategoryController extends Controller
 
     public function destroy(CaseCategory $category): RedirectResponse
     {
-        // Cases referencing this category have case_category_id set to
-        // null automatically (nullOnDelete on the FK), they aren't deleted.
         $category->delete();
 
         return back()->with('status', 'Category deleted.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?CaseCategory $category = null): array
     {
+        $request->merge(['name' => trim($request->input('name', ''))]);
+
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('case_categories', 'name')
+                    ->where(fn($query) => $query->whereRaw('LOWER(name) = ?', [
+                        strtolower($request->input('name')),
+                    ]))
+                    ->ignore($category?->id),
+            ],
             'description' => ['nullable', 'string'],
+        ], [
+            'name.unique' => 'A category with this name already exists.',
         ]);
 
-        // Checkbox: unchecked simply isn't sent, so read it explicitly
-        // rather than validating its presence.
         $validated['is_active'] = $request->boolean('is_active');
 
         return $validated;

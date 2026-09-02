@@ -41,13 +41,17 @@ Route::prefix(config('admin.panel_slug'))
         Route::middleware(['auth', 'admin'])->group(function () {
             Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-            Route::get('dashboard', function () {return view('admin.dashboard');})->name('dashboard');
+            Route::get('dashboard', function () {
+                return view('admin.dashboard');
+            })->name('dashboard');
 
             Route::resource('mediators', MediatorController::class)->names('mediators');
 
             Route::resource('cases', CaseController::class)->names('cases');
 
             Route::resource('categories', CaseCategoryController::class)->names('categories');
+
+            Route::get('/alerts-demo', fn() => view('alerts-demo'));
         });
     });
 

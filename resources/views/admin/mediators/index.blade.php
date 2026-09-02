@@ -18,9 +18,15 @@
         </a>
     </div>
 
-    @if (session('success'))
-        <div class="mb-5 rounded-md bg-sage/10 border border-sage/30 text-sage text-sm px-4 py-2.5">
-            {{ session('success') }}
+    @if (session('status'))
+        <div class="mb-5">
+            <x-alert type="success" title="Success!" :message="session('status')" :dismiss-after="10000" />
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="mb-5">
+            <x-alert type="error" title="Error!" :message="session('error')" :dismiss-after="10000" />
         </div>
     @endif
 
