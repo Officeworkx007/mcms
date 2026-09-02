@@ -24,6 +24,8 @@
 
     @include('admin.layouts.footer')
 
+    @stack('scripts')
+
 </body>
 
 </html>

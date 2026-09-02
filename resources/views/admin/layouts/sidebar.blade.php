@@ -115,8 +115,9 @@
             </div>
         </div>
 
-        <a href="#"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-body hover:bg-black/5 border-l-2 border-transparent transition-colors">
+        <a href="{{ route('admin.reports.index') }}"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors border-l-2
+           {{ request()->routeIs('admin.reports.*') ? 'bg-maroon/10 text-maroon border-maroon' : 'text-body hover:bg-black/5 border-transparent' }}">
             <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                 <path stroke-linecap="round" stroke-linejoin="round"
                     d="M9 17v-6h6v6M4 10l8-7 8 7v9a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />

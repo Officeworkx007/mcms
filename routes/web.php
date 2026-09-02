@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\MediatorController;
 use App\Http\Controllers\Admin\CaseController;
 use App\Http\Controllers\Admin\CaseCategoryController;
+use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -51,7 +52,15 @@ Route::prefix(config('admin.panel_slug'))
 
             Route::resource('categories', CaseCategoryController::class)->names('categories');
 
-            Route::get('/alerts-demo', fn() => view('alerts-demo'));
+            Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+            Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+            Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+
+            Route::get('/reports/mediation-summary', [ReportController::class, 'mediationSummary'])->name('reports.mediation-summary');
+
+            Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
         });
     });
 

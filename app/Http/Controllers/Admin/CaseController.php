@@ -16,7 +16,7 @@ class CaseController extends Controller
     {
         $cases = MediationCase::with(['mediator', 'category'])
             ->oldest()
-            ->paginate(20);
+            ->paginate(40);
 
         return view('admin.cases.index', compact('cases'));
     }
