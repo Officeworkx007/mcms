@@ -14,6 +14,7 @@ class CaseCategory extends Model
         'name',
         'description',
         'is_active',
+        'sort_order',
     ];
 
     protected $casts = [
