@@ -87,9 +87,9 @@
                 </thead>
                 <tbody>
                     @forelse ($categories as $category)
-                        <tr class="text-center text-body">
+                        <tr class="text-center font-bold text-ink">
                             <td class="border border-border px-3 py-2.5 text-left">{{ $category->name }}</td>
-                            <td class="border border-border px-3 py-2.5 font-medium">
+                            <td class="border border-border px-3 py-2.5">
                                 {{ $category->cases_count > 0 ? $category->cases_count : '' }}</td>
                             <td class="border border-border px-3 py-2.5">
                                 {{ $category->settled_count > 0 ? $category->settled_count : '' }}</td>
@@ -141,8 +141,8 @@
             }
 
             /* Force solid, visible grid lines regardless of the border-color
-                   CSS variable — some browsers wash out light/variable-based
-                   border colors when printing. */
+                       CSS variable — some browsers wash out light/variable-based
+                       border colors when printing. */
             #report-printable table,
             #report-printable th,
             #report-printable td {

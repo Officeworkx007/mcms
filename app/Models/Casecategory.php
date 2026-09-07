@@ -25,4 +25,11 @@ class CaseCategory extends Model
     {
         return $this->hasMany(MediationCase::class, 'case_category_id');
     }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('sortOrder', function ($query) {
+            $query->orderBy('sort_order');
+        });
+    }
 }

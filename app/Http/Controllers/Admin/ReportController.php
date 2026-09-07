@@ -111,7 +111,6 @@ class ReportController extends Controller
                 $query->where('status', 'unsettled');
             },
         ])
-            ->orderBy('name', 'asc')
             ->get();
 
         $totals = [

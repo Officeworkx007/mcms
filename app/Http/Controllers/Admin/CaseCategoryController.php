@@ -40,7 +40,6 @@ class CaseCategoryController extends Controller
                 $query->where('status', 'unsettled');
             },
         ])
-            ->orderBy('name', 'asc')
             ->paginate(20)
             ->withQueryString();
 
@@ -102,6 +101,7 @@ class CaseCategoryController extends Controller
                     ->ignore($category?->id),
             ],
             'description' => ['nullable', 'string'],
+            'sort_order' => ['required', 'integer', 'min:0'],
         ], [
             'name.unique' => 'A category with this name already exists.',
         ]);
