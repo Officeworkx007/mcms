@@ -1,6 +1,6 @@
 @extends('admin.layouts.master')
 
-@section('title', 'Mediation Summary Report')
+@section('title', $mediator ? 'Mediator Report' : 'Mediation Summary Report')
 
 @section('content')
 
@@ -8,9 +8,13 @@
         <div>
             <a href="{{ route('admin.reports.index') }}" class="text-xs font-medium text-maroon hover:underline">&larr; All
                 Reports</a>
-            <h1 class="text-base font-bold text-ink mt-0.5">Mediation Summary Report</h1>
+            <h1 class="text-base font-bold text-ink mt-0.5">
+                {{ $mediator ? $mediator->advocate_name . ' — Case Report' : 'Mediation Summary Report' }}
+            </h1>
             <p class="text-xs text-muted">
-                @if ($from || $to)
+                @if ($mediator)
+                    Showing all cases ever assigned to {{ $mediator->advocate_name }}.
+                @elseif (($from ?? null) || ($to ?? null))
                     Showing cases received
                     {{ $from ? \Illuminate\Support\Carbon::parse($from)->format('d-m-Y') : 'the start' }}
                     to {{ $to ? \Illuminate\Support\Carbon::parse($to)->format('d-m-Y') : 'present' }}.
@@ -67,7 +71,7 @@
                             </p>
                             <p class="text-sm font-semibold text-ink mt-1">
                                 {{ $label }}
-                                @if ($from || $to)
+                                @if (!$mediator && (($from ?? null) || ($to ?? null)))
                                     &middot;
                                     {{ $from ? \Illuminate\Support\Carbon::parse($from)->format('d.m.Y') : 'Start' }}
                                     to
@@ -78,7 +82,12 @@
                     </tr>
                     <tr class="border-b-2 border-ink text-center text-xs font-bold text-ink uppercase">
                         <th class="border border-border px-3 py-3 text-left align-middle">Nature / Category of Cases</th>
-                        <th class="border border-border px-3 py-3 align-middle">Cases Referred to<br>Mediation Centre
+                        <th class="border border-border px-3 py-3 align-middle">
+                            @if ($mediator)
+                                Cases Referred to Mediator
+                            @else
+                                Cases Referred to<br>Mediation Centre
+                            @endif
                         </th>
                         <th class="border border-border px-3 py-3 align-middle">No. of <br>Settled Cases</th>
                         <th class="border border-border px-3 py-3 align-middle">No. of UnSettled Cases</th>
@@ -141,8 +150,8 @@
             }
 
             /* Force solid, visible grid lines regardless of the border-color
-                       CSS variable — some browsers wash out light/variable-based
-                       border colors when printing. */
+                           CSS variable — some browsers wash out light/variable-based
+                           border colors when printing. */
             #report-printable table,
             #report-printable th,
             #report-printable td {

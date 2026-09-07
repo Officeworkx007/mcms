@@ -8,7 +8,9 @@ use App\Http\Controllers\Admin\CaseCategoryController;
 use App\Http\Controllers\Admin\ReportController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {return view('homepage.index');});
+Route::get('/', function () {
+    return view('homepage.index');
+});
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -57,6 +59,8 @@ Route::prefix(config('admin.panel_slug'))
             Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
             Route::get('/reports/mediation-summary', [ReportController::class, 'mediationSummary'])->name('reports.mediation-summary');
+
+            Route::get('/reports/mediator-summary', [ReportController::class, 'mediatorSummary'])->name('reports.mediator-summary');
 
             Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
         });

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CaseCategory;
 use App\Models\ReportLog;
+use App\Models\Mediator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,6 +24,13 @@ class ReportController extends Controller
                 'title' => 'Mediation Summary Report',
                 'description' => 'Case counts by category — referred, settled, unsettled, and pending — for a chosen date range or mediation phase.',
                 'route_name' => 'admin.reports.mediation-summary',
+                'fields' => 'range', // date-range modal
+            ],
+            'mediator-summary' => [
+                'title' => 'Mediator-wise Report',
+                'description' => 'Case counts by category for a single mediator — all cases ever assigned to them, no date range.',
+                'route_name' => 'admin.reports.mediator-summary',
+                'fields' => 'mediator', // mediator-dropdown modal
             ],
         ];
     }
@@ -33,7 +41,11 @@ class ReportController extends Controller
 
         $recentReports = ReportLog::latest()->take(20)->get();
 
-        return view('admin.reports.index', compact('reportTypes', 'recentReports'));
+        $mediators = Mediator::where('is_active', true)
+            ->orderBy('advocate_name')
+            ->get();
+
+        return view('admin.reports.index', compact('reportTypes', 'recentReports', 'mediators'));
     }
 
     /**
@@ -42,24 +54,33 @@ class ReportController extends Controller
      */
     public function generate(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'report_key' => ['required', 'string'],
-            'label' => ['nullable', 'string', 'max:100'],
-            'from' => ['nullable', 'date'],
-            'to' => ['nullable', 'date', 'after_or_equal:from'],
-        ]);
-
         $reportTypes = $this->reportTypes();
-        $reportKey = $validated['report_key'];
+        $reportKey = $request->input('report_key');
 
         abort_unless(isset($reportTypes[$reportKey]), 404);
 
         $meta = $reportTypes[$reportKey];
 
+        $validated = $request->validate([
+            'report_key' => ['required', 'string'],
+            'label' => ['nullable', 'string', 'max:100'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'mediator_id' => [$meta['fields'] === 'mediator' ? 'required' : 'nullable', 'integer', 'exists:mediators,id'],
+        ]);
+
+        $label = $validated['label'] ?? null;
+
+        if ($meta['fields'] === 'mediator') {
+            $mediator = Mediator::findOrFail($validated['mediator_id']);
+            $label = $mediator->advocate_name;
+        }
+
         $params = array_filter([
-            'label' => $validated['label'] ?? null,
+            'label' => $label,
             'from' => $validated['from'] ?? null,
             'to' => $validated['to'] ?? null,
+            'mediator_id' => $validated['mediator_id'] ?? null,
         ]);
 
         $url = route($meta['route_name'], $params);
@@ -67,7 +88,7 @@ class ReportController extends Controller
         ReportLog::create([
             'report_key' => $reportKey,
             'title' => $meta['title'],
-            'label' => $validated['label'] ?? null,
+            'label' => $label,
             'from_date' => $validated['from'] ?? null,
             'to_date' => $validated['to'] ?? null,
             'url' => $url,
@@ -86,6 +107,7 @@ class ReportController extends Controller
         $to = $request->input('to');
         $label = $request->input('label', 'Mediation Summary');
         $autoprint = $request->boolean('autoprint');
+        $mediator = null;
 
         $withinRange = function ($query) use ($from, $to) {
             if ($from) {
@@ -120,7 +142,45 @@ class ReportController extends Controller
             'pending_count' => $categories->sum('pending_count'),
         ];
 
-        return view('admin.reports.mediation-summary', compact('categories', 'totals', 'from', 'to', 'label', 'autoprint'));
+        return view('admin.reports.mediation-summary', compact('categories', 'totals', 'from', 'to', 'label', 'autoprint', 'mediator'));
+    }
+
+    public function mediatorSummary(Request $request): View
+    {
+        $mediatorId = $request->input('mediator_id');
+        $mediator = Mediator::findOrFail($mediatorId);
+
+        $label = $request->input('label', $mediator->advocate_name);
+        $autoprint = $request->boolean('autoprint');
+
+        $scopedToMediator = function ($query) use ($mediatorId) {
+            $query->where('mediator_id', $mediatorId);
+        };
+
+        $categories = CaseCategory::withCount([
+            'cases as cases_count' => $scopedToMediator,
+            'cases as pending_count' => function ($query) use ($scopedToMediator) {
+                $scopedToMediator($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($scopedToMediator) {
+                $scopedToMediator($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($scopedToMediator) {
+                $scopedToMediator($query);
+                $query->where('status', 'unsettled');
+            },
+        ])->get();
+
+        $totals = [
+            'cases_count' => $categories->sum('cases_count'),
+            'settled_count' => $categories->sum('settled_count'),
+            'unsettled_count' => $categories->sum('unsettled_count'),
+            'pending_count' => $categories->sum('pending_count'),
+        ];
+
+        return view('admin.reports.mediation-summary', compact('categories', 'totals', 'mediator', 'label', 'autoprint'));
     }
 
     public function destroy(ReportLog $report): RedirectResponse

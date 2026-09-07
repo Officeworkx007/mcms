@@ -22,7 +22,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         @foreach ($reportTypes as $key => $report)
             <button type="button"
-                onclick="openReportModal('{{ $key }}', @js($report['title']), @js($report['description']))"
+                onclick="{{ $report['fields'] === 'mediator' ? 'openMediatorModal' : 'openReportModal' }}('{{ $key }}', @js($report['title']), @js($report['description']))"
                 class="text-left bg-white border border-border rounded-lg shadow-sm overflow-hidden flex flex-col hover:border-maroon/40 hover:shadow-md transition-all">
                 <div class="px-5 pt-5 pb-4 border-b border-border flex-1">
                     <div class="flex items-start gap-3">
@@ -177,6 +177,56 @@
         </div>
     </div>
 
+    {{-- "Generate Mediator Report" modal --}}
+    <div id="mediatorReportModal" class="hidden fixed inset-0 z-50 items-start justify-center pt-16 px-4">
+        <div class="absolute inset-0 bg-black/40" onclick="closeMediatorModal()"></div>
+
+        <div class="relative bg-white w-full max-w-md rounded-lg shadow-xl overflow-hidden">
+            <div class="px-5 py-4 border-b border-border flex items-start justify-between">
+                <div class="min-w-0 pr-3">
+                    <p id="mediator-modal-report-title" class="text-sm font-bold text-ink">Report Title</p>
+                    <p id="mediator-modal-report-desc" class="mt-1 text-xs text-muted leading-relaxed">Report description
+                    </p>
+                </div>
+                <button type="button" onclick="closeMediatorModal()"
+                    class="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-muted hover:bg-slate-100">
+                    &times;
+                </button>
+            </div>
+
+            <form action="{{ route('admin.reports.generate') }}" method="POST" class="px-5 py-4 space-y-3">
+                @csrf
+                <input type="hidden" id="mediator-modal-report-key" name="report_key" value="">
+
+                <div>
+                    <label class="block text-[10.5px] font-semibold text-muted uppercase tracking-wide mb-1">
+                        Mediator
+                    </label>
+                    <select name="mediator_id" required
+                        class="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-maroon/20">
+                        <option value="" disabled selected>Select a mediator</option>
+                        @foreach ($mediators as $mediator)
+                            <option value="{{ $mediator->id }}">{{ $mediator->advocate_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <p class="text-[11px] text-muted -mt-1">Includes every case ever assigned to this mediator, regardless of
+                    status.</p>
+
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" onclick="closeMediatorModal()"
+                        class="flex-1 border border-border text-ink text-sm font-semibold py-2.5 rounded-md hover:bg-slate-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="flex-1 bg-maroon hover:bg-maroon/90 text-white text-sm font-semibold py-2.5 rounded-md transition-colors">
+                        Generate Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -197,8 +247,27 @@
             modal.classList.remove('flex');
         }
 
+        function openMediatorModal(key, title, desc) {
+            document.getElementById('mediator-modal-report-key').value = key;
+            document.getElementById('mediator-modal-report-title').textContent = title;
+            document.getElementById('mediator-modal-report-desc').textContent = desc;
+
+            const modal = document.getElementById('mediatorReportModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeMediatorModal() {
+            const modal = document.getElementById('mediatorReportModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeReportModal();
+            if (e.key === 'Escape') {
+                closeReportModal();
+                closeMediatorModal();
+            }
         });
     </script>
 @endpush
