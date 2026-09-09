@@ -1,6 +1,6 @@
 @extends('admin.layouts.master')
 
-@section('title', $mediator ? 'Mediator Report' : 'Mediation Summary Report')
+@section('title', $mediator ? 'Mediator Report' : ($category ?? null ? 'Case-wise Report' : 'Mediation Summary Report'))
 
 @section('content')
 
@@ -9,11 +9,19 @@
             <a href="{{ route('admin.reports.index') }}" class="text-xs font-medium text-maroon hover:underline">&larr; All
                 Reports</a>
             <h1 class="text-base font-bold text-ink mt-0.5">
-                {{ $mediator ? $mediator->advocate_name . ' — Case Report' : 'Mediation Summary Report' }}
+                @if ($mediator)
+                    {{ $mediator->advocate_name }} — Case Report
+                @elseif ($category ?? null)
+                    {{ $category->name }} — Case-wise Report
+                @else
+                    Mediation Summary Report
+                @endif
             </h1>
             <p class="text-xs text-muted">
                 @if ($mediator)
                     Showing all cases ever assigned to {{ $mediator->advocate_name }}.
+                @elseif ($category ?? null)
+                    Showing every mediator with cases under {{ $category->name }}.
                 @elseif (($from ?? null) || ($to ?? null))
                     Showing cases received
                     {{ $from ? \Illuminate\Support\Carbon::parse($from)->format('d-m-Y') : 'the start' }}
@@ -71,7 +79,7 @@
                             </p>
                             <p class="text-sm font-semibold text-ink mt-1">
                                 {{ $label }}
-                                @if (!$mediator && (($from ?? null) || ($to ?? null)))
+                                @if (!$mediator && !($category ?? null) && (($from ?? null) || ($to ?? null)))
                                     &middot;
                                     {{ $from ? \Illuminate\Support\Carbon::parse($from)->format('d.m.Y') : 'Start' }}
                                     to
@@ -81,9 +89,15 @@
                         </th>
                     </tr>
                     <tr class="border-b-2 border-ink text-center text-xs font-bold text-ink uppercase">
-                        <th class="border border-border px-3 py-3 text-left align-middle">Nature / Category of Cases</th>
+                        <th class="border border-border px-3 py-3 text-left align-middle">
+                            @if ($category ?? null)
+                                Mediator
+                            @else
+                                Nature / Category of Cases
+                            @endif
+                        </th>
                         <th class="border border-border px-3 py-3 align-middle">
-                            @if ($mediator)
+                            @if ($mediator || ($category ?? null))
                                 Cases Referred to Mediator
                             @else
                                 Cases Referred to<br>Mediation Centre
@@ -95,22 +109,32 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($categories as $category)
+                    @php
+                        $rows = $category ?? null ? $mediators : $categories;
+                    @endphp
+
+                    @forelse ($rows as $row)
                         <tr class="text-center font-bold text-ink">
-                            <td class="border border-border px-3 py-2.5 text-left">{{ $category->name }}</td>
+                            <td class="border border-border px-3 py-2.5 text-left">
+                                {{ $category ?? null ? $row->advocate_name : $row->name }}
+                            </td>
                             <td class="border border-border px-3 py-2.5">
-                                {{ $category->cases_count > 0 ? $category->cases_count : '' }}</td>
+                                {{ $row->cases_count > 0 ? $row->cases_count : '' }}</td>
                             <td class="border border-border px-3 py-2.5">
-                                {{ $category->settled_count > 0 ? $category->settled_count : '' }}</td>
+                                {{ $row->settled_count > 0 ? $row->settled_count : '' }}</td>
                             <td class="border border-border px-3 py-2.5">
-                                {{ $category->unsettled_count > 0 ? $category->unsettled_count : '' }}</td>
+                                {{ $row->unsettled_count > 0 ? $row->unsettled_count : '' }}</td>
                             <td class="border border-border px-3 py-2.5">
-                                {{ $category->pending_count > 0 ? $category->pending_count : '' }}</td>
+                                {{ $row->pending_count > 0 ? $row->pending_count : '' }}</td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="5" class="border border-border px-4 py-8 text-center text-muted">
-                                No categories recorded yet.
+                                @if ($category ?? null)
+                                    No mediators have cases under this category yet.
+                                @else
+                                    No categories recorded yet.
+                                @endif
                             </td>
                         </tr>
                     @endforelse
@@ -150,8 +174,8 @@
             }
 
             /* Force solid, visible grid lines regardless of the border-color
-                           CSS variable — some browsers wash out light/variable-based
-                           border colors when printing. */
+                               CSS variable — some browsers wash out light/variable-based
+                               border colors when printing. */
             #report-printable table,
             #report-printable th,
             #report-printable td {

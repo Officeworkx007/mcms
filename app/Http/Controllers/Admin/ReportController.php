@@ -32,6 +32,12 @@ class ReportController extends Controller
                 'route_name' => 'admin.reports.mediator-summary',
                 'fields' => 'mediator', // mediator-dropdown modal
             ],
+            'case-summary' => [
+                'title' => 'Case-wise Report',
+                'description' => 'Each mediator\'s case counts within a single category — settled, unsettled, and pending, for all mediators assigned under that category.',
+                'route_name' => 'admin.reports.case-summary',
+                'fields' => 'category', // category-dropdown modal
+            ],
         ];
     }
 
@@ -45,7 +51,9 @@ class ReportController extends Controller
             ->orderBy('advocate_name')
             ->get();
 
-        return view('admin.reports.index', compact('reportTypes', 'recentReports', 'mediators'));
+        $categories = CaseCategory::orderBy('sort_order')->get();
+
+        return view('admin.reports.index', compact('reportTypes', 'recentReports', 'mediators', 'categories'));
     }
 
     /**
@@ -66,7 +74,16 @@ class ReportController extends Controller
             'label' => ['nullable', 'string', 'max:100'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
-            'mediator_id' => [$meta['fields'] === 'mediator' ? 'required' : 'nullable', 'integer', 'exists:mediators,id'],
+            'mediator_id' => [
+                $meta['fields'] === 'mediator' ? 'required' : 'nullable',
+                'integer',
+                'exists:mediators,id',
+            ],
+            'case_category_id' => [
+                $meta['fields'] === 'category' ? 'required' : 'nullable',
+                'integer',
+                'exists:case_categories,id',
+            ],
         ]);
 
         $label = $validated['label'] ?? null;
@@ -76,11 +93,17 @@ class ReportController extends Controller
             $label = $mediator->advocate_name;
         }
 
+        if ($meta['fields'] === 'category') {
+            $category = CaseCategory::findOrFail($validated['case_category_id']);
+            $label = $category->name;
+        }
+
         $params = array_filter([
             'label' => $label,
             'from' => $validated['from'] ?? null,
             'to' => $validated['to'] ?? null,
             'mediator_id' => $validated['mediator_id'] ?? null,
+            'case_category_id' => $validated['case_category_id'] ?? null,
         ]);
 
         $url = route($meta['route_name'], $params);
@@ -108,6 +131,7 @@ class ReportController extends Controller
         $label = $request->input('label', 'Mediation Summary');
         $autoprint = $request->boolean('autoprint');
         $mediator = null;
+        $category = null;
 
         $withinRange = function ($query) use ($from, $to) {
             if ($from) {
@@ -180,7 +204,51 @@ class ReportController extends Controller
             'pending_count' => $categories->sum('pending_count'),
         ];
 
+        $category = null;
+
         return view('admin.reports.mediation-summary', compact('categories', 'totals', 'mediator', 'label', 'autoprint'));
+    }
+
+    public function caseSummary(Request $request): View
+    {
+        $categoryId = $request->input('case_category_id');
+        $category = CaseCategory::findOrFail($categoryId);
+        $mediator = null;
+
+        $label = $request->input('label', $category->name);
+        $autoprint = $request->boolean('autoprint');
+
+        $scopedToCategory = function ($query) use ($categoryId) {
+            $query->where('case_category_id', $categoryId);
+        };
+
+        $mediators = Mediator::withCount([
+            'cases as cases_count' => $scopedToCategory,
+            'cases as pending_count' => function ($query) use ($scopedToCategory) {
+                $scopedToCategory($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($scopedToCategory) {
+                $scopedToCategory($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($scopedToCategory) {
+                $scopedToCategory($query);
+                $query->where('status', 'unsettled');
+            },
+        ])->get();
+
+        $totals = [
+            'cases_count' => $mediators->sum('cases_count'),
+            'settled_count' => $mediators->sum('settled_count'),
+            'unsettled_count' => $mediators->sum('unsettled_count'),
+            'pending_count' => $mediators->sum('pending_count'),
+        ];
+
+        return view(
+            'admin.reports.mediation-summary',
+            compact('mediators', 'totals', 'category', 'mediator', 'label', 'autoprint')
+        );
     }
 
     public function destroy(ReportLog $report): RedirectResponse
