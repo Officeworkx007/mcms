@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\MediatorController;
 use App\Http\Controllers\Admin\CaseController;
 use App\Http\Controllers\Admin\CaseCategoryController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,7 +53,7 @@ Route::prefix(config('admin.panel_slug'))
 
             Route::resource('categories', CaseCategoryController::class)->names('categories');
 
-            Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+            Route::resource('roles', RoleController::class)->names('roles');
 
             Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
