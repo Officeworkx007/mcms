@@ -257,4 +257,300 @@ class ReportController extends Controller
 
         return redirect()->route('admin.reports.index')->with('success', 'Report removed.');
     }
+
+    public function export(Request $request, string $type, string $format)
+    {
+        abort_unless(in_array($type, ['mediation-summary', 'mediator-summary', 'case-summary'], true), 404);
+        abort_unless(in_array($format, ['excel', 'word'], true), 404);
+
+        $data = match ($type) {
+            'mediation-summary' => $this->mediationSummaryExportData($request),
+            'mediator-summary' => $this->mediatorSummaryExportData($request),
+            'case-summary' => $this->caseSummaryExportData($request),
+        };
+
+        $filename = \Illuminate\Support\Str::slug($data['label'] ?? $type) . '-' . now()->format('Ymd');
+
+        return $format === 'excel'
+            ? $this->downloadXlsx($data, $filename)
+            : $this->downloadDocx($data, $filename);
+    }
+
+    private function mediationSummaryExportData(Request $request): array
+    {
+        $from = $request->input('from');
+        $to = $request->input('to');
+        $label = $request->input('label', 'Mediation Summary');
+
+        $withinRange = function ($query) use ($from, $to) {
+            if ($from) {
+                $query->whereDate('received_date', '>=', $from);
+            }
+            if ($to) {
+                $query->whereDate('received_date', '<=', $to);
+            }
+        };
+
+        $categories = CaseCategory::withCount([
+            'cases as cases_count' => $withinRange,
+            'cases as pending_count' => function ($query) use ($withinRange) {
+                $withinRange($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($withinRange) {
+                $withinRange($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($withinRange) {
+                $withinRange($query);
+                $query->where('status', 'unsettled');
+            },
+        ])->get();
+
+        $totals = [
+            'cases_count' => $categories->sum('cases_count'),
+            'settled_count' => $categories->sum('settled_count'),
+            'unsettled_count' => $categories->sum('unsettled_count'),
+            'pending_count' => $categories->sum('pending_count'),
+        ];
+
+        $subtitle = $label;
+        if ($from || $to) {
+            $subtitle .= ' · '
+                . ($from ? \Illuminate\Support\Carbon::parse($from)->format('d.m.Y') : 'Start')
+                . ' to '
+                . ($to ? \Illuminate\Support\Carbon::parse($to)->format('d.m.Y') : 'Present');
+        }
+
+        return [
+            'pageTitle' => 'High Court Mediation Centre, High Court of Manipur',
+            'subtitle' => $subtitle,
+            'firstColHeader' => 'Nature / Category of Cases',
+            'secondColHeader' => 'Cases Referred to Mediation Centre',
+            'rows' => $categories->map(fn($c) => [
+                $c->name,
+                $c->cases_count,
+                $c->settled_count,
+                $c->unsettled_count,
+                $c->pending_count,
+            ])->all(),
+            'totals' => $totals,
+            'label' => $label,
+        ];
+    }
+
+    private function mediatorSummaryExportData(Request $request): array
+    {
+        $mediatorId = $request->input('mediator_id');
+        $mediator = Mediator::findOrFail($mediatorId);
+        $label = $request->input('label', $mediator->advocate_name);
+
+        $scopedToMediator = function ($query) use ($mediatorId) {
+            $query->where('mediator_id', $mediatorId);
+        };
+
+        $categories = CaseCategory::withCount([
+            'cases as cases_count' => $scopedToMediator,
+            'cases as pending_count' => function ($query) use ($scopedToMediator) {
+                $scopedToMediator($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($scopedToMediator) {
+                $scopedToMediator($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($scopedToMediator) {
+                $scopedToMediator($query);
+                $query->where('status', 'unsettled');
+            },
+        ])->get();
+
+        $totals = [
+            'cases_count' => $categories->sum('cases_count'),
+            'settled_count' => $categories->sum('settled_count'),
+            'unsettled_count' => $categories->sum('unsettled_count'),
+            'pending_count' => $categories->sum('pending_count'),
+        ];
+
+        return [
+            'pageTitle' => 'High Court Mediation Centre, High Court of Manipur',
+            'subtitle' => $label,
+            'firstColHeader' => 'Nature / Category of Cases',
+            'secondColHeader' => 'Cases Referred to Mediator',
+            'rows' => $categories->map(fn($c) => [
+                $c->name,
+                $c->cases_count,
+                $c->settled_count,
+                $c->unsettled_count,
+                $c->pending_count,
+            ])->all(),
+            'totals' => $totals,
+            'label' => $label,
+        ];
+    }
+
+    private function caseSummaryExportData(Request $request): array
+    {
+        $categoryId = $request->input('case_category_id');
+        $category = CaseCategory::findOrFail($categoryId);
+        $label = $request->input('label', $category->name);
+
+        $scopedToCategory = function ($query) use ($categoryId) {
+            $query->where('case_category_id', $categoryId);
+        };
+
+        $mediators = Mediator::withCount([
+            'cases as cases_count' => $scopedToCategory,
+            'cases as pending_count' => function ($query) use ($scopedToCategory) {
+                $scopedToCategory($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($scopedToCategory) {
+                $scopedToCategory($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($scopedToCategory) {
+                $scopedToCategory($query);
+                $query->where('status', 'unsettled');
+            },
+        ])->get();
+
+        $totals = [
+            'cases_count' => $mediators->sum('cases_count'),
+            'settled_count' => $mediators->sum('settled_count'),
+            'unsettled_count' => $mediators->sum('unsettled_count'),
+            'pending_count' => $mediators->sum('pending_count'),
+        ];
+
+        return [
+            'pageTitle' => 'High Court Mediation Centre, High Court of Manipur',
+            'subtitle' => $label,
+            'firstColHeader' => 'Mediator',
+            'secondColHeader' => 'Cases Referred to Mediator',
+            'rows' => $mediators->map(fn($m) => [
+                $m->advocate_name,
+                $m->cases_count,
+                $m->settled_count,
+                $m->unsettled_count,
+                $m->pending_count,
+            ])->all(),
+            'totals' => $totals,
+            'label' => $label,
+        ];
+    }
+
+    private function downloadXlsx(array $data, string $filename)
+    {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = [
+            $data['firstColHeader'],
+            $data['secondColHeader'],
+            'No. of Settled Cases',
+            'No. of UnSettled Cases',
+            'No. of Pending Cases',
+        ];
+
+        $sheet->mergeCells('A1:E1');
+        $sheet->setCellValue('A1', $data['pageTitle']);
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(13);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal('center');
+
+        $sheet->mergeCells('A2:E2');
+        $sheet->setCellValue('A2', $data['subtitle']);
+        $sheet->getStyle('A2')->getFont()->setBold(true)->setSize(11);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal('center');
+
+        $sheet->fromArray($headers, null, 'A3');
+        $sheet->getStyle('A3:E3')->getFont()->setBold(true);
+        $sheet->getStyle('A3:E3')->getAlignment()->setHorizontal('center')->setWrapText(true);
+
+        $row = 4;
+        foreach ($data['rows'] as $r) {
+            $sheet->setCellValue("A{$row}", $r[0]);
+            $sheet->setCellValue("B{$row}", $r[1] ?: '');
+            $sheet->setCellValue("C{$row}", $r[2] ?: '');
+            $sheet->setCellValue("D{$row}", $r[3] ?: '');
+            $sheet->setCellValue("E{$row}", $r[4] ?: '');
+            $sheet->getStyle("B{$row}:E{$row}")->getAlignment()->setHorizontal('center');
+            $row++;
+        }
+
+        $sheet->setCellValue("A{$row}", 'Total');
+        $sheet->setCellValue("B{$row}", $data['totals']['cases_count']);
+        $sheet->setCellValue("C{$row}", $data['totals']['settled_count']);
+        $sheet->setCellValue("D{$row}", $data['totals']['unsettled_count']);
+        $sheet->setCellValue("E{$row}", $data['totals']['pending_count']);
+        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
+        $sheet->getStyle("B{$row}:E{$row}")->getAlignment()->setHorizontal('center');
+
+        $lastRow = $row;
+        $sheet->getStyle("A1:E{$lastRow}")
+            ->getBorders()->getAllBorders()
+            ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+
+        foreach (range('A', 'E') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename . '.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function downloadDocx(array $data, string $filename)
+    {
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $section = $phpWord->addSection(['orientation' => 'portrait']);
+
+        $section->addText($data['pageTitle'], ['bold' => true, 'size' => 14], ['alignment' => 'center']);
+        $section->addText($data['subtitle'], ['bold' => true, 'size' => 11], ['alignment' => 'center', 'spaceAfter' => 200]);
+
+        $phpWord->addTableStyle('ReportTable', [
+            'borderSize' => 6,
+            'borderColor' => '000000',
+            'cellMargin' => 80,
+        ]);
+        $table = $section->addTable('ReportTable');
+
+        $headers = [
+            $data['firstColHeader'],
+            $data['secondColHeader'],
+            'No. of Settled Cases',
+            'No. of UnSettled Cases',
+            'No. of Pending Cases',
+        ];
+
+        $table->addRow();
+        foreach ($headers as $i => $h) {
+            $table->addCell($i === 0 ? 3000 : 1600)->addText($h, ['bold' => true], ['alignment' => 'center']);
+        }
+
+        foreach ($data['rows'] as $r) {
+            $table->addRow();
+            $table->addCell(3000)->addText($r[0], ['bold' => true], ['alignment' => 'left']);
+            foreach (array_slice($r, 1) as $val) {
+                $table->addCell(1600)->addText((string) ($val ?: ''), ['bold' => true], ['alignment' => 'center']);
+            }
+        }
+
+        $table->addRow();
+        $table->addCell(3000)->addText('Total', ['bold' => true], ['alignment' => 'left']);
+        foreach (['cases_count', 'settled_count', 'unsettled_count', 'pending_count'] as $key) {
+            $table->addCell(1600)->addText((string) $data['totals'][$key], ['bold' => true], ['alignment' => 'center']);
+        }
+
+        $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename . '.docx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ]);
+    }
 }

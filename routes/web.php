@@ -65,6 +65,8 @@ Route::prefix(config('admin.panel_slug'))
             Route::get('/reports/case-summary', [ReportController::class, 'caseSummary'])->name('reports.case-summary');
 
             Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
+
+            Route::get('reports/export/{type}/{format}', [ReportController::class, 'export'])->name('reports.export');
         });
     });
 

@@ -32,17 +32,20 @@
             </p>
         </div>
 
+        @php
+            $exportType = $mediator ? 'mediator-summary' : ($category ?? null ? 'case-summary' : 'mediation-summary');
+            $exportQuery = array_filter([
+                'label' => $label,
+                'from' => $from ?? null,
+                'to' => $to ?? null,
+                'mediator_id' => $mediator->id ?? null,
+                'case_category_id' => $category->id ?? null,
+            ]);
+        @endphp
+
         <div class="flex items-center gap-2">
 
-            <a href=""
-                class="inline-flex items-center gap-1.5 bg-white border border-border hover:bg-slate-50 text-ink text-sm font-semibold px-3.5 py-2 rounded-md transition-colors">
-                <svg class="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M12 4.5v11m0 0l-3.5-3.5M12 15.5l3.5-3.5M4.5 17v2a1.5 1.5 0 001.5 1.5h12a1.5 1.5 0 001.5-1.5v-2" />
-                </svg>
-                PDF
-            </a>
-            <a href=""
+            <a href="{{ route('admin.reports.export', array_merge(['type' => $exportType, 'format' => 'excel'], $exportQuery)) }}"
                 class="inline-flex items-center gap-1.5 bg-white border border-border hover:bg-slate-50 text-ink text-sm font-semibold px-3.5 py-2 rounded-md transition-colors">
                 <svg class="w-4 h-4 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     stroke-width="1.8">
@@ -51,7 +54,7 @@
                 </svg>
                 Excel
             </a>
-            <a href=""
+            <a href="{{ route('admin.reports.export', array_merge(['type' => $exportType, 'format' => 'word'], $exportQuery)) }}"
                 class="inline-flex items-center gap-1.5 bg-white border border-border hover:bg-slate-50 text-ink text-sm font-semibold px-3.5 py-2 rounded-md transition-colors">
                 <svg class="w-4 h-4 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"
                     stroke-width="1.8">
@@ -174,8 +177,8 @@
             }
 
             /* Force solid, visible grid lines regardless of the border-color
-                               CSS variable — some browsers wash out light/variable-based
-                               border colors when printing. */
+                                       CSS variable — some browsers wash out light/variable-based
+                                       border colors when printing. */
             #report-printable table,
             #report-printable th,
             #report-printable td {
