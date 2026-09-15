@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\User\UserAuthController;
+use App\Http\Controllers\User\UserCaseCategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -96,6 +97,8 @@ Route::prefix('user')
             Route::get('dashboard', function () {
                 return view('user.dashboard');
             })->name('dashboard');
+
+            Route::resource('categories', UserCaseCategoryController::class)->names('categories');
         });
     });
 

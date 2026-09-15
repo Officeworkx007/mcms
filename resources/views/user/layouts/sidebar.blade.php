@@ -8,7 +8,7 @@
         </span>
         <span class="u-brand-text">
             <span class="u-brand-word">HCLSC</span>
-            <span class="u-brand-sub">Samadhan Staff Portal</span>
+            <span class="u-brand-sub">MCMS Staff Portal</span>
         </span>
     </a>
 
@@ -26,35 +26,33 @@
             </span>
         </a>
 
-        {{-- TODO: replace href="#" with route('user.cases.*') once routes exist --}}
-        @can('case.view')
+        @can('case_category.view')
             <div class="u-nav-group">
-                <button type="button" class="u-nav-link u-nav-toggle" onclick="uToggleSubmenu('u-cases-submenu', this)">
+                <button type="button" class="u-nav-link u-nav-toggle"
+                    onclick="uToggleSubmenu('u-categories-submenu', this)">
                     <span class="u-nav-link-left">
                         <span class="u-nav-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                                 stroke-linecap="round" stroke-linejoin="round">
-                                <path
-                                    d="M9 12h6m-6 4h6M9 8h1M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
+                                <path d="M4 6h16M4 12h16M4 18h7" />
                             </svg>
                         </span>
-                        <span>Cases</span>
+                        <span>Case Category</span>
                     </span>
                     <svg class="u-nav-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div id="u-cases-submenu" class="u-submenu">
-                    <a href="#" class="u-submenu-link">All Cases</a>
-                    @can('case.create')
-                        <a href="#" class="u-submenu-link">Add Case</a>
+                <div id="u-categories-submenu" class="u-submenu">
+                    <a href="{{ route('user.categories.index') }}" class="u-submenu-link">All Categories</a>
+                    @can('case_category.create')
+                        <a href="{{ route('user.categories.create') }}" class="u-submenu-link">Add Category</a>
                     @endcan
                 </div>
             </div>
         @endcan
 
-        {{-- TODO: replace href="#" with route('user.mediators.*') once routes exist --}}
         @can('mediator.view')
             <div class="u-nav-group">
                 <button type="button" class="u-nav-link u-nav-toggle"
@@ -83,29 +81,29 @@
             </div>
         @endcan
 
-        {{-- TODO: replace href="#" with route('user.categories.*') once routes exist --}}
-        @can('case_category.view')
+        {{-- TODO: replace href="#" with route('user.cases.*') once routes exist --}}
+        @can('case.view')
             <div class="u-nav-group">
-                <button type="button" class="u-nav-link u-nav-toggle"
-                    onclick="uToggleSubmenu('u-categories-submenu', this)">
+                <button type="button" class="u-nav-link u-nav-toggle" onclick="uToggleSubmenu('u-cases-submenu', this)">
                     <span class="u-nav-link-left">
                         <span class="u-nav-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                                 stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 6h16M4 12h16M4 18h7" />
+                                <path
+                                    d="M9 12h6m-6 4h6M9 8h1M5 4h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" />
                             </svg>
                         </span>
-                        <span>Case Category</span>
+                        <span>Cases</span>
                     </span>
                     <svg class="u-nav-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 9l-7 7-7-7" />
                     </svg>
                 </button>
-                <div id="u-categories-submenu" class="u-submenu">
-                    <a href="#" class="u-submenu-link">All Categories</a>
-                    @can('case_category.create')
-                        <a href="#" class="u-submenu-link">Add Category</a>
+                <div id="u-cases-submenu" class="u-submenu">
+                    <a href="#" class="u-submenu-link">All Cases</a>
+                    @can('case.create')
+                        <a href="#" class="u-submenu-link">Add Case</a>
                     @endcan
                 </div>
             </div>

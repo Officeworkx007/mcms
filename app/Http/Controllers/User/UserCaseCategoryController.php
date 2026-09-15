@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+use App\Models\CaseCategory;
+use App\Models\Mediator;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class UserCaseCategoryController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $mediatorId = $request->input('mediator_id');
+
+        // Each count below respects the mediator filter when one is
+        // selected, so all five totals (cases/pending/settled/unsettled)
+        // stay consistent with each other.
+        $filterByMediator = function ($query) use ($mediatorId) {
+            if ($mediatorId) {
+                $query->where('mediator_id', $mediatorId);
+            }
+        };
+
+        $categories = CaseCategory::withCount([
+            'cases as cases_count' => $filterByMediator,
+            'cases as pending_count' => function ($query) use ($filterByMediator) {
+                $filterByMediator($query);
+                $query->where('status', 'pending');
+            },
+            'cases as settled_count' => function ($query) use ($filterByMediator) {
+                $filterByMediator($query);
+                $query->where('status', 'settled');
+            },
+            'cases as unsettled_count' => function ($query) use ($filterByMediator) {
+                $filterByMediator($query);
+                $query->where('status', 'unsettled');
+            },
+        ])
+            ->orderBy('sort_order')
+            ->paginate(20)
+            ->withQueryString();
+
+        $mediators = Mediator::where('is_active', true)
+            ->orderBy('advocate_name')
+            ->get();
+
+        return view('user.categories.index', compact('categories', 'mediators', 'mediatorId'));
+    }
+
+    public function create(): View
+    {
+        return view('user.categories.create');
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        CaseCategory::create($this->validated($request));
+
+        return redirect()
+            ->route('user.categories.index')
+            ->with('status', 'Category created.');
+    }
+
+    public function edit(CaseCategory $category): View
+    {
+        return view('user.categories.edit', compact('category'));
+    }
+
+    public function update(Request $request, CaseCategory $category): RedirectResponse
+    {
+        $category->update($this->validated($request, $category));
+
+        return redirect()
+            ->route('user.categories.index')
+            ->with('status', 'Category updated.');
+    }
+
+    public function destroy(CaseCategory $category): RedirectResponse
+    {
+        $category->delete();
+
+        return back()->with('status', 'Category deleted.');
+    }
+
+    private function validated(Request $request, ?CaseCategory $category = null): array
+    {
+        $request->merge(['name' => trim($request->input('name', ''))]);
+
+        $validated = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('case_categories', 'name')
+                    ->where(fn($query) => $query->whereRaw('LOWER(name) = ?', [
+                        strtolower($request->input('name')),
+                    ]))
+                    ->ignore($category?->id),
+            ],
+            'description' => ['nullable', 'string'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ], [
+            'name.unique' => 'A category with this name already exists.',
+        ]);
+
+        $validated['is_active'] = $request->boolean('is_active');
+
+        return $validated;
+    }
+}
