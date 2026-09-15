@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -23,53 +22,42 @@ class UserAuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'login'    => 'required|string',
             'password' => 'required',
         ]);
 
-        $key = Str::lower($request->input('email')) . '|' . $request->ip();
+        $key = Str::lower($request->input('login')) . '|' . $request->ip();
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
             return back()->withErrors([
-                'email' => "Too many login attempts. Try again in {$seconds} seconds.",
+                'login' => "Too many login attempts. Try again in {$seconds} seconds.",
             ])->withInput();
         }
 
-        \Log::info('Remember debug', [
-            'raw_remember' => $request->input('remember'),
-            'boolean_remember' => $request->boolean('remember'),
-        ]);
+        $loginInput = $request->input('login');
+        $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        if (Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (Auth::attempt([$field => $loginInput, 'password' => $request->input('password')], $request->boolean('remember'))) {
             $user = Auth::user();
 
-            // Block admin from logging in here
             if ($user->hasRole('admin')) {
                 Auth::logout();
                 return back()->withErrors([
-                    'email' => 'This portal is for Authorized Staff only. Admins must use the admin login.',
+                    'login' => 'This portal is for Authorized Staff only. Admins must use the admin login.',
                 ])->withInput();
             }
 
-            if (!$user->is_active) {
+            if ($user->roles->isEmpty()) {
                 Auth::logout();
                 return back()->withErrors([
-                    'email' => 'Your account has been deactivated. Contact the administrator.',
-                ])->withInput();
-            }
-
-            if (!$user->hasRole('editor')) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Access denied.',
+                    'login' => 'No role has been assigned to your account. Contact the administrator.',
                 ])->withInput();
             }
 
             RateLimiter::clear($key);
             $request->session()->regenerate();
 
-            // Invalidate all other sessions for this user
             DB::table('sessions')
                 ->where('user_id', $user->id)
                 ->where('id', '!=', session()->getId())
@@ -81,7 +69,7 @@ class UserAuthController extends Controller
         RateLimiter::hit($key);
 
         return back()->withErrors([
-            'email' => 'Invalid credentials.',
+            'login' => 'Invalid credentials.',
         ])->withInput();
     }
 
@@ -99,7 +87,7 @@ class UserAuthController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->hasRole('editor')) {
+        if ($user->roles->isNotEmpty()) {
             return redirect()->route('user.dashboard');
         }
 

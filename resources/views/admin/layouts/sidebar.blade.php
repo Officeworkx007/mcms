@@ -13,6 +13,76 @@
 
         <div>
             <button
+                onclick="document.getElementById('roles-submenu').classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180');"
+                type="button"
+                class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors
+        {{ request()->routeIs('admin.roles.*') ? 'bg-maroon/10 text-maroon' : 'text-body hover:bg-black/5' }}">
+                <span class="flex items-center gap-3">
+                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span>Roles</span>
+                </span>
+                <svg class="chevron w-4 h-4 shrink-0 transition-transform {{ request()->routeIs('admin.roles.*') ? 'rotate-180' : '' }}"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <div id="roles-submenu"
+                class="{{ request()->routeIs('admin.roles.*') ? '' : 'hidden' }} mt-1 ml-4 pl-4 border-l border-border space-y-1">
+                <a href="{{ route('admin.roles.index') }}"
+                    class="block px-3 py-2 rounded-md text-sm transition-colors
+           {{ request()->routeIs('admin.roles.index') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
+                    All Roles
+                </a>
+                <a href="{{ route('admin.roles.create') }}"
+                    class="block px-3 py-2 rounded-md text-sm transition-colors
+           {{ request()->routeIs('admin.roles.create') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
+                    Add Role
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <button
+                onclick="document.getElementById('users-submenu').classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180');"
+                type="button"
+                class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors
+        {{ request()->routeIs('admin.users.*') ? 'bg-maroon/10 text-maroon' : 'text-body hover:bg-black/5' }}">
+                <span class="flex items-center gap-3">
+                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>Users</span>
+                </span>
+                <svg class="chevron w-4 h-4 shrink-0 transition-transform {{ request()->routeIs('admin.users.*') ? 'rotate-180' : '' }}"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <div id="users-submenu"
+                class="{{ request()->routeIs('admin.users.*') ? '' : 'hidden' }} mt-1 ml-4 pl-4 border-l border-border space-y-1">
+                <a href="{{ route('admin.users.index') }}"
+                    class="block px-3 py-2 rounded-md text-sm transition-colors
+           {{ request()->routeIs('admin.users.index') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
+                    All Users
+                </a>
+                <a href="{{ route('admin.users.create') }}"
+                    class="block px-3 py-2 rounded-md text-sm transition-colors
+           {{ request()->routeIs('admin.users.create') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
+                    Add User
+                </a>
+            </div>
+        </div>
+
+        <div>
+            <button
                 onclick="document.getElementById('cases-submenu').classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180');"
                 type="button"
                 class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors
@@ -111,41 +181,6 @@
                     class="block px-3 py-2 rounded-md text-sm transition-colors
            {{ request()->routeIs('admin.categories.create') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
                     Add Category
-                </a>
-            </div>
-        </div>
-
-        <div>
-            <button
-                onclick="document.getElementById('roles-submenu').classList.toggle('hidden'); this.querySelector('.chevron').classList.toggle('rotate-180');"
-                type="button"
-                class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors
-        {{ request()->routeIs('admin.roles.*') ? 'bg-maroon/10 text-maroon' : 'text-body hover:bg-black/5' }}">
-                <span class="flex items-center gap-3">
-                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <span>Roles</span>
-                </span>
-                <svg class="chevron w-4 h-4 shrink-0 transition-transform {{ request()->routeIs('admin.roles.*') ? 'rotate-180' : '' }}"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-
-            <div id="roles-submenu"
-                class="{{ request()->routeIs('admin.roles.*') ? '' : 'hidden' }} mt-1 ml-4 pl-4 border-l border-border space-y-1">
-                <a href="{{ route('admin.roles.index') }}"
-                    class="block px-3 py-2 rounded-md text-sm transition-colors
-           {{ request()->routeIs('admin.roles.index') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
-                    All Roles
-                </a>
-                <a href="{{ route('admin.roles.create') }}"
-                    class="block px-3 py-2 rounded-md text-sm transition-colors
-           {{ request()->routeIs('admin.roles.create') ? 'text-maroon font-medium' : 'text-body hover:bg-black/5' }}">
-                    Add Role
                 </a>
             </div>
         </div>

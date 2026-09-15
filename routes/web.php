@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\CaseController;
 use App\Http\Controllers\Admin\CaseCategoryController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\User\UserAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -55,6 +57,8 @@ Route::prefix(config('admin.panel_slug'))
 
             Route::resource('roles', RoleController::class)->names('roles');
 
+            Route::resource('users', UserController::class)->names('users');
+
             Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
             Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
@@ -68,6 +72,30 @@ Route::prefix(config('admin.panel_slug'))
             Route::delete('reports/{report}', [ReportController::class, 'destroy'])->name('reports.destroy');
 
             Route::get('reports/export/{type}/{format}', [ReportController::class, 'export'])->name('reports.export');
+        });
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Non-Admin User Routes (public login from the homepage)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('user')
+    ->name('user.')
+    ->group(function () {
+
+        Route::middleware('guest')->group(function () {
+            Route::get('login', [UserAuthController::class, 'showLoginForm'])->name('login');
+            Route::post('login', [UserAuthController::class, 'login']);
+        });
+
+        Route::middleware('auth')->group(function () {
+            Route::post('logout', [UserAuthController::class, 'logout'])->name('logout');
+
+            // Placeholder until the second (non-admin) panel is scaffolded.
+            Route::get('dashboard', function () {
+                return view('user.dashboard');
+            })->name('dashboard');
         });
     });
 
